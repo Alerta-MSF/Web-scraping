@@ -1,0 +1,28 @@
+######################################################
+version: '2.1'
+services:
+
+# AIRFLOW
+######################################################
+
+  airflow:
+    build: ./airflow
+    restart: always
+    container_name: airflow
+    volumes:
+      - ./airflow/airflow.cfg:/opt/airflow/airflow.cfg
+      - ./airflow/dags:/opt/airflow/dags
+      # - ./free_monthly_learning_resources/resources/readme.md:/opt/airflow/dags/readme.md
+      - ./links_novos.md:/opt/airflow/dags/links_novos.md
+      - ./links_a_verificar.md:/opt/airflow/links_a_verificar.md
+
+
+
+
+    ports:
+      - 8080:8080
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "airflow", "8080" ]
+      timeout: 45s
+      interval: 10s
+      retries: 10

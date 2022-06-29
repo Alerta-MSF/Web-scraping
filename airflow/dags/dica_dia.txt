@@ -1,0 +1,4 @@
+Foi_utilizado;Dica;Link
+True;Site com questões e respostas das mais variadas provas pra quem está se preparando pra pegar algum certificado;https://www.examtopics.com/ 
+False;Google Dorking é uma técnica para usar o Google de forma mais precisa, inclusive é uma das técnicas que uso para esse projeto. Caso queira conhecer melhor essa técnica;https://exposingtheinvisible.org/guides/google-dorking/ 
+False;É possível conseguir os certificados de Fundamentals da Azure, como o AZ-900, AI-900 e DP-900, de forma gratuita, sendo necessário apenas participar de uma aula online da Microsoft;https://www.microsoft.com/en-us/trainingdays/azure/
