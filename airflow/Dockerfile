@@ -41,11 +41,9 @@ RUN apt-get update -y && \
 RUN pip install --upgrade "pip==20.2.4" && \
     useradd -ms /bin/bash -d ${AIRFLOW_HOME} airflow && \
     pip install apache-airflow==${AIRFLOW_VERSION} --constraint https://raw.githubusercontent.com/apache/airflow/constraints-2.1.4/constraints-3.7.txt && \
-    pip install apache-airflow-providers-apache-hdfs==2.1.0 && \
-    pip install apache-airflow-providers-apache-hive==2.0.2 && \
-    pip install apache-airflow-providers-apache-spark==2.0.1 && \
-    pip install apache-airflow-providers-slack==4.0.1 && \
-    pip install apache-airflow-providers-http==2.0.1
+    pip install pymongo\
+    pip install psycopg2\
+    pip install tweepy
 
 # Copy the airflow.cfg file (config)
 #COPY ./config/airflow.cfg ${AIRFLOW_HOME}/airflow.cfg
@@ -66,7 +64,7 @@ USER airflow
 RUN mkdir -p ${AIRFLOW_HOME}/dags
 
 # Expose ports (just to indicate that this container needs to map port)
-EXPOSE 8080
+EXPOSE 8081
 
 # Execute start-airflow.sh
 CMD [ "./start-airflow.sh" ]
