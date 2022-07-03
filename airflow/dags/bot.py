@@ -3,95 +3,35 @@ from airflow.operators.python_operator import PythonOperator
 import smtplib, ssl
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-
 from datetime import datetime, timedelta
-from bs4 import BeautifulSoup
-import requests
-import re
 import pymongo
-import psycopg2
 import pandas as pd
 import tweepy
 import time
 
 # Emails de teste 
-lista_mails = ['uiuiunitimu@gmail.com','george.sousa.evm@gmail.com'] 
+lista_mails = ['msfalerta@gmail.com'] 
 
 default_args = {
             "owner": "airflow",
             "start_date": datetime(2022, 1, 1),
-            "email_on_failure": False,
+            "email_on_failure": True,
             "email_on_retry": False,
             "email": ["msfalerta@gmail.com"],
             "retries": 0,
             "retry_delay": timedelta(seconds=20)
         }
 
-# def dica_do_dia():
-#     """Seleciona uma dica para ser compartilhada"""
-
-#     df = pd.read_csv('/opt/airflow/dags/dica_dia.txt',sep=';')
-    
-#     # Se todas as dicas já foram utilizadas, resetar o arquivo para constar que nenhuma foi utilizada
-#     if df.Foi_utilizado.all():
-#         df.Foi_utilizado = False
-    
-#     index_linha_inutilizada = df[df.Foi_utilizado == False].index[0]
-#     info_dia = df.iloc[index_linha_inutilizada,1:]
-#     df.at[index_linha_inutilizada,'Foi_utilizado'] = True
-#     df.to_csv('/opt/airflow/dags/dica_dia.txt',index=False,sep=';')
-
-#     desc,link = info_dia
-#     dica_para_email = '<h3>Dica do Dia</h3><ul>'
-#     dica_para_email += create_line_to_email(desc,link)
-#     dica_para_email += '</ul>'
-
-#     dica_para_email += '<br><h6>Link para cadastro e FAQ : <a href="https://recursos-por-email.herokuapp.com/">https://recursos-por-email.herokuapp.com/</a></h6>'
-
-#     return dica_para_email
-
-# def contar_inscritos_e_backup(emails):
-#     """Salvar a quantidade de inscritos naquele dia e backup dos emails cadastrados"""
-#     qtd_inscritos = str(len(emails[2:])) # Ignoro meus 2 emails pessoais
-#     data_hj = data()
-#     linha_para_csv = '\n' + qtd_inscritos + ',' + data_hj 
-
-#     with open('/opt/airflow/dags/qtd_inscritos.txt', 'a', encoding='utf-8') as qtd_inscritos_file:
-#         qtd_inscritos_file.write(linha_para_csv)
-    
-#     with open('/opt/airflow/dags/inscritos_backup.txt', 'w', encoding='utf-8') as inscritos_backup_file:
-#         emails_to_txt = '\n'.join(emails)
-#         inscritos_backup_file.write(emails_to_txt)
 
 def capturar_emails(lista_mails=lista_mails):
     """Seleciona os emails cadastrados"""
     
-    # try:
-    #     conn = psycopg2.connect(
-    #         host="jelani.db.elephantsql.com",
-    #         database="kzehgxmz",
-    #         user="kzehgxmz",
-    #         password="CZdS8hB_VywxtDc8-lslF8mcuojHUMun")
-
-    #     query ="""SELECT email
-    #     FROM main_data;"""
-
-    #     emails_a_enviar = pd.read_sql(query,conn).email.tolist()
-
-    #     # Salvando quantidade de inscritos para verificar a progressão com o tempo
-    #     # contar_inscritos_e_backup(emails_a_enviar)
-
-    # except:
-    #     # Caso ocorra algum erro com o Banco de Dados:
-    #     with open('/opt/airflow/dags/inscritos_backup.txt', 'r', encoding='utf-8') as inscritos_backup_file:
-    #         emails_a_enviar = inscritos_backup_file.read().split()
-
     return lista_mails
 
 def mongoCollection():
     """Conectando no MongoDB e selecionando a Collection que armazenará os dados coletados"""
 
-    client = pymongo.MongoClient("mongodb+srv://msfalerta:Msf.alerta123@clustermsf.lqude.mongodb.net/?retryWrites=true&w=majority")
+    client = pymongo.MongoClient("mongodb+srv://")
 
     db = client['db-msf']
     collection_grat = db['msf-alerta']
@@ -124,16 +64,16 @@ def data(fin='mongoDB', yesterday=False, last_week=False):
         data_format = data_necessaria.strftime('%d/%m/%Y')
     return data_format
 
-def salvando_novidades_localmente(links_atualizados,dic_exp):
-    """Mantendo o arquivo local atualizado"""
+# def salvando_novidades_localmente(links_atualizados,dic_exp):
+#     """Mantendo o arquivo local atualizado"""
     
-    with open('/opt/airflow/dags/links_novos.md', 'w', encoding='utf-8') as links_a_atualizar:
-        for line in links_atualizados:
-            links_a_atualizar.write(line)
+#     with open('/opt/airflow/dags/links_novos.md', 'w', encoding='utf-8') as links_a_atualizar:
+#         for line in links_atualizados:
+#             links_a_atualizar.write(line)
 
-    with open('/opt/airflow/dags/links_exp.txt', 'w', encoding='utf-8') as file_links_exp_ontem:
-        for link in dic_exp.keys():
-            file_links_exp_ontem.write(link)
+#     with open('/opt/airflow/dags/links_exp.txt', 'w', encoding='utf-8') as file_links_exp_ontem:
+#         for link in dic_exp.keys():
+#             file_links_exp_ontem.write(link)
 
 def dic_to_mail_and_db(dic,json_para_collection,data_hj):
     """Loop dos dicionários que armazenam as novidades para que elas sejam enviadas por email e para o DB"""
@@ -147,33 +87,34 @@ def dic_to_mail_and_db(dic,json_para_collection,data_hj):
         item_json = {'info':k,
                 'url_fonte':val['link_fonte'],
                 'conta':val['conta'],
-                'data':data_hj}
+                'data':data_hj,
+                'palavra_chave':val['palavra_chave']}
 
         json_para_collection.append(item_json)
 
     texto_temp += '</ul>'
     return texto_temp
 
-def google_scrapping(soup,dic_exp):
-    """Capturando Urls e Descrições das novidades que foram encontradas"""
+# def google_scrapping(soup,dic_exp):
+#     """Capturando Urls e Descrições das novidades que foram encontradas"""
     
-    links = soup.html.find_all('div',attrs={'class':'egMi0 kCrYT'})
+#     links = soup.html.find_all('div',attrs={'class':'egMi0 kCrYT'})
 
-    if links == []:
-        return 
+#     if links == []:
+#         return 
 
-    for x in links:
-        link = x.find('a')
-        desc = x.find('div',attrs={'class':'BNeawe vvjwJb AP7Wnd'})
+#     for x in links:
+#         link = x.find('a')
+#         desc = x.find('div',attrs={'class':'BNeawe vvjwJb AP7Wnd'})
 
-        link = re.search('href="/url\?q=(.+)&amp;sa=U&amp', str(link)).group(1)
-        if '%' in link:
-            link= link.split('%')[0]
-        desc = re.search(">(.+)</div>", str(desc)).group(1)
+#         link = re.search('href="/url\?q=(.+)&amp;sa=U&amp', str(link)).group(1)
+#         if '%' in link:
+#             link= link.split('%')[0]
+#         desc = re.search(">(.+)</div>", str(desc)).group(1)
 
-        dic_exp[desc] = link
+#         dic_exp[desc] = link
     
-    return dic_exp
+#     return dic_exp
 
 def scraping_twitter(dic_exp):
     """Verificando as contas de interesse em busca de novidades relevantes"""
@@ -188,26 +129,22 @@ def scraping_twitter(dic_exp):
     client = tweepy.Client(bearer_token=bearer_token, consumer_key=api_key, consumer_secret=api_secrets, access_token=access_token, access_token_secret=access_secret)
     data_twitter = data(fin='twitter_api', last_week=True)
 
-    palavras_chave = ['doenças negligenciadas','doença de chagas','doença da fome','cancro oral','doença noma',
-                      'hepatice c','acesso a medicamentos','propriedade intelectual','crise climática',
-                      'desastres','desastres socioambientais','ajuda humanitária','migração','refúgio',
-                      'terras indígenas','funai'
-                        ]
+    df_palavras = pd.read_excel('/opt/airflow/dags/palavras_chave.xlsx')
+    palavras_chave = df_palavras.PALAVRAS_CHAVE.to_list()
 
-    dic_id_user_and_lookup_words = {'GloboNews':{'id':'142393421','words':palavras_chave},
-                                    'SenadoFederal':{'id':'40095953','words':palavras_chave},
-                                    'camaradeputados':{'id':'61843152','words':palavras_chave},
-                                    'reporterb':{'id':'41097241','words':palavras_chave},
-                                    'agenciapublica':{'id':'310497473','words':palavras_chave}
-                                    }
+    df_contas = pd.read_csv('/opt/airflow/dags/contas_twitter.csv',dtype={'ID':str})
 
-    for conta,info in dic_id_user_and_lookup_words.items():
+    dic_id_user = {}
+    for conta,conta_id,error in df_contas.values:
+        dic_id_user[conta] = conta_id
+    
+    for conta,id in dic_id_user.items():
 
         # Caso acorra um erro 503(The Twitter servers are up, but overloaded with requests. Try again later.),
         # o código é executado novamente
         for i in range(10):
             try:
-                tweets = client.get_users_tweets(info['id'],start_time=data_twitter)
+                tweets = client.get_users_tweets(id,start_time=data_twitter)
                 break
             except:
                 if i == 9:
@@ -221,16 +158,12 @@ def scraping_twitter(dic_exp):
         twts_relevantes = []
         for twt in tweets_texto:
             twitt_txt = twt.text
-            for expressao_interessante in info['words']:
+            for expressao_interessante in palavras_chave:
                 if expressao_interessante in twitt_txt.lower():
                     twts_relevantes.append((twitt_txt.replace('\n',''),twt,expressao_interessante))
 
         for twt_txt,twitte_orig,expressao_interessante in twts_relevantes:
-            palavras = twt_txt.split()#[:-1] 
-            # for i,palavra in enumerate(palavras):
-            #     if 'https://' in palavra:
-            #         link = palavra
-            #         palavras.pop(i)
+            palavras = twt_txt.split()
             twt_formatado = ' '.join(palavras)
             dic_exp[twt_formatado] = {'palavra_chave':expressao_interessante,'conta':conta,'link_fonte':'https://twitter.com/i/status/'+ str(twitte_orig.id)}
 
@@ -258,34 +191,7 @@ def expansao():
 
 
 def download_resources_links():
-    # """Procurando todos os links novos"""
-
-    # path = '/opt/airflow/dags/free_monthly_learning_resources/resources/readme.md'
-    # with open(path, 'r', encoding='utf-8') as links_atualizados:
-    #     links_atualizados = links_atualizados.readlines()
-
-    #     # As 14 primeiras linhas são sempre iguais
-    #     links_atualizados = links_atualizados[14:]
-
-    #     for i,x in enumerate(links_atualizados):
-    #         if x == '':
-    #             links_atualizados.pop(i)
-    #         links_atualizados[i] = x.strip('# \n')
-
-    #     sites_e_urls = {}
-    #     for i,x in enumerate(links_atualizados):
-    #         if x[:3] == '###':
-    #             link = links_atualizados[i+1]
-    #             if link[:5] == 'https':
-    #                 sites_e_urls[x] = link
-    #             else:
-    #                 sites_e_urls[x] = 'Sem Link!'
-    
-    # # Comparar 'links_hoje' com 'links_ontem':
-    # with open('/opt/airflow/dags/links_novos.md', 'r', encoding='utf-8') as links_desatualizados:
-    #     links_ontem = links_desatualizados.readlines()
-    #     links_a_verificar_base = {link_hj_k:link_hj_v for link_hj_k,link_hj_v in sites_e_urls.items() if link_hj_k not in links_ontem}
-    
+    """Procurando todos os links novos"""
 
     # Capturando novos links por web scrapping
     dic_exp = expansao()
@@ -308,12 +214,8 @@ def download_resources_links():
     data_hj = data()
 
     if dic_exp != {}:
-        texto_email = '<h3>Expansão</h3><ul>'
+        texto_email = '<h3>Notícias</h3><ul>'
         texto_email += dic_to_mail_and_db(dic_exp,json_para_collection,data_hj)
-
-    # if links_a_verificar_base != {}:
-    #     texto_email = '<h3>Base</h3><ul>'
-    #     texto_email += dic_to_mail_and_db(links_a_verificar_base,json_para_collection,data_hj)
 
     collection_urls.insert_many(json_para_collection)
 

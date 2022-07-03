@@ -43,7 +43,8 @@ RUN pip install --upgrade "pip==20.2.4" && \
     pip install apache-airflow==${AIRFLOW_VERSION} --constraint https://raw.githubusercontent.com/apache/airflow/constraints-2.1.4/constraints-3.7.txt && \
     pip install pymongo\
     pip install psycopg2\
-    pip install tweepy
+    pip install tweepy\
+    pip install openpyxl
 
 # Copy the airflow.cfg file (config)
 #COPY ./config/airflow.cfg ${AIRFLOW_HOME}/airflow.cfg
