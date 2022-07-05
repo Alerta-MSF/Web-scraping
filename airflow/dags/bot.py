@@ -31,7 +31,7 @@ def capturar_emails(lista_mails=lista_mails):
 def mongoCollection():
     """Conectando no MongoDB e selecionando a Collection que armazenará os dados coletados"""
 
-    client = pymongo.MongoClient("mongodb+srv://")
+    client = pymongo.MongoClient("mongodb+srv://msfalerta:Msf.alerta123@clustermsf.lqude.mongodb.net/?retryWrites=true&w=majority")
 
     db = client['db-msf']
     collection_grat = db['msf-alerta']
@@ -127,7 +127,7 @@ def scraping_twitter(dic_exp):
 
     # Authenticate to Twitter
     client = tweepy.Client(bearer_token=bearer_token, consumer_key=api_key, consumer_secret=api_secrets, access_token=access_token, access_token_secret=access_secret)
-    data_twitter = data(fin='twitter_api', last_week=True)
+    data_twitter = data(fin='twitter_api', yesterday=True)
 
     df_palavras = pd.read_excel('/opt/airflow/dags/palavras_chave.xlsx')
     palavras_chave = df_palavras.PALAVRAS_CHAVE.to_list()
